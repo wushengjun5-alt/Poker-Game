@@ -960,6 +960,12 @@ class PokerGUI:
         self.next_hand_btn.pack(side=tk.RIGHT, padx=5)
         self.next_hand_btn.pack_forget()
 
+        # Restart button (shown when game is over)
+        self.restart_btn = tk.Button(self.controls_frame, text="🔄 Restart", command=self._on_restart,
+                                      font=('Arial', 12, 'bold'), width=12, bg='#44aaaa')
+        self.restart_btn.pack(side=tk.RIGHT, padx=5)
+        self.restart_btn.pack_forget()
+
         self._disable_controls()
 
     def _create_player_display(self, parent: tk.Frame, player_idx: int) -> dict:
@@ -1136,6 +1142,7 @@ class PokerGUI:
                 self.next_hand_btn.pack(side=tk.RIGHT, padx=5)
             else:
                 self.message_label.config(text="Game Over! " + state['message'])
+                self.restart_btn.pack(side=tk.RIGHT, padx=5)
             return
 
         if not current_player or not current_player.is_human:
@@ -1351,9 +1358,36 @@ class PokerGUI:
         if self.engine.is_game_over():
             messagebox.showinfo("Game Over", "The game is over!")
             self._show_statistics()
-            self.root.quit()
         else:
             self._start_new_hand()
+
+    def _on_restart(self):
+        """Restart the game with fresh chips and stats."""
+        # Clear existing player frames
+        for pf in self.player_frames:
+            pf['frame'].destroy()
+        self.player_frames.clear()
+
+        # Reset engine and create new players
+        self.engine = PokerEngine()
+        self.engine.setup_players("You")
+
+        # Hide restart button
+        self.restart_btn.pack_forget()
+
+        # Recreate player displays
+        for i in range(1, 4):
+            self.player_frames.append(self._create_player_display(self.top_frame, i))
+        for i in range(4, 6):
+            self.player_frames.append(self._create_player_display(self.bottom_frame, i))
+        self.player_frames.insert(0, self._create_player_display(self.human_frame, 0))
+        self.player_frames[0]['frame'].configure(bg='#1a4d2e', bd=3)
+
+        # Reset chat
+        self.chat_label.config(text="🎰 Welcome back! New game started.")
+
+        # Start new hand
+        self._start_new_hand()
 
 
 # =============================================================================
